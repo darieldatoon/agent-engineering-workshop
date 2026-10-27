@@ -376,16 +376,14 @@ def tag_evaluator(client: Client, rule: dict[str, Any]) -> None:
 
 
 def bind_assertions_evaluator(client: Client, dataset: Dataset) -> str:
-    """Attach the Assertions evaluator to the dataset, once. Returns the rule's ID.
+    """Attach the Assertions evaluator to the dataset, or update it to the current judge model.
 
-    A dataset rule scores every experiment run on the dataset, so no evaluator is passed to
-    `evaluate` for it.
+    Returns the rule's ID. A dataset rule scores every experiment run on the dataset, so no
+    evaluator is passed to `evaluate` for it.
     """
     rules = api(client, "GET", "/runs/rules", dataset_id=str(dataset.id))
     rules = [r for r in rules if str(r.get("dataset_id")) == str(dataset.id)]
-    if existing := next((r for r in rules if r["display_name"].startswith("Assertions")), None):
-        tag_evaluator(client, existing)
-        return existing["id"]
+    existing = next((r for r in rules if r["display_name"].startswith("Assertions")), None)
     judge = judge_settings(client)
     spec = {
         "display_name": ASSERTIONS_RULE_NAME,
@@ -406,6 +404,10 @@ def bind_assertions_evaluator(client: Client, dataset: Dataset) -> str:
             }
         ],
     }
+    if existing:
+        api(client, "PATCH", f"/runs/rules/{existing['id']}", spec)
+        tag_evaluator(client, existing)
+        return existing["id"]
     rule = api(client, "POST", "/runs/rules", spec)
     tag_evaluator(client, rule)
     return rule["id"]

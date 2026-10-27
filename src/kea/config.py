@@ -16,8 +16,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-MODEL = os.environ.get("KEA_MODEL", "langsmith:openai/gpt-5.6-luna")
-JUDGE_MODEL = os.environ.get("KEA_JUDGE_MODEL", "langsmith:openai/gpt-5.6-luna")
+MODEL = os.environ.get("KEA_MODEL", "langsmith:openai/gpt-6-luna")
+JUDGE_MODEL = os.environ.get("KEA_JUDGE_MODEL", "langsmith:openai/gpt-6-luna")
 # The second model in the side-by-side experiments.
 ALT_MODEL = os.environ.get("KEA_ALT_MODEL", "langsmith:anthropic/claude-haiku-5-5")
 
