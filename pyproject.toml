@@ -1,0 +1,56 @@
+[project]
+name = "kea"
+version = "0.1.0"
+description = "Agent engineering workshop: a LangGraph workflow, a Deep Agent, and LangSmith evals and deployment, built for a fictional airline, Kea Air."
+readme = "README.md"
+authors = [
+    { name = "Dariel Dato-on", email = "293921406+darieldatoon@users.noreply.github.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "langgraph>=1.2.18",
+    "langchain>=1.4.7",
+    "langchain-openai>=1.6.7",
+    "deepagents>=0.7.32",
+    "langsmith>=0.14.12",
+    "langchain-mcp-adapters>=0.3.2",
+    "openevals>=0.2.0",
+    "pydantic>=2.9",
+    "python-dotenv>=1.1",
+    "ipykernel>=6.29",
+    # Attendees run `langgraph dev` themselves, so the CLI is a runtime dependency, not dev-only.
+    "langgraph-cli[inmem]>=0.4.40",
+]
+
+[dependency-groups]
+dev = [
+    "nbstripout>=0.9.1",
+    "pytest>=9.1",
+    "ruff>=0.16.3",
+    "ty>=0.0.72",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.22,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Notebooks import after the setup cell and read as teaching code.
+"notebooks/*.ipynb" = ["E402", "B018"]
+
+[tool.ty.src]
+# Notebooks are teaching code: plain dict configs read better than `RunnableConfig` annotations.
+# Ruff still lints them.
+exclude = ["notebooks"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+# Terms that must never appear in the repo, including in the hook that reads them.
+.denylist
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+
+# Notebooks and local servers
+.ipynb_checkpoints/
+.langgraph_api/
+notebooks/.langgraph_api/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

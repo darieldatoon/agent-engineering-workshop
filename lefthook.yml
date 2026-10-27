@@ -1,0 +1,27 @@
+# Install once: `mise run setup` (or `lefthook install`).
+pre-commit:
+  parallel: false # strip runs before lint; lint reads what strip produced
+  jobs:
+    # Outputs are never committed: they bloat diffs and can carry workspace IDs and traced payloads.
+    - name: strip notebook outputs
+      glob: "notebooks/*.ipynb"
+      run: uv run --no-sync nbstripout {staged_files}
+      stage_fixed: true
+    - name: ruff format
+      glob: "*.{py,ipynb}"
+      run: uv run --no-sync ruff format --check {staged_files}
+    - name: ruff lint
+      glob: "*.{py,ipynb}"
+      run: uv run --no-sync ruff check {staged_files}
+    - name: ty
+      glob: "*.py"
+      run: uv run --no-sync ty check
+    # Binder installs from this file, not uv.lock; keep them in step.
+    - name: binder requirements
+      glob: "{uv.lock,pyproject.toml}"
+      run: mise run binder:export
+      stage_fixed: true
+    - name: secrets
+      run: bash tools/scan_secrets.sh {staged_files}
+    - name: denylist
+      run: bash tools/scan_denylist.sh {staged_files}

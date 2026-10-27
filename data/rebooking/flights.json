@@ -1,0 +1,16 @@
+[
+  {"flight_number": "KA 1176", "origin": "DAL", "destination": "DEN", "day_offset": 1, "departs": "06:05", "arrives": "07:40", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 3},
+  {"flight_number": "KA 1182", "origin": "DAL", "destination": "DEN", "day_offset": 1, "departs": "07:15", "arrives": "08:50", "status": "CANCELLED", "cancellation_cause": "mechanical", "seats_available": 0},
+  {"flight_number": "KA 1190", "origin": "DAL", "destination": "DEN", "day_offset": 1, "departs": "09:40", "arrives": "11:15", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 4},
+  {"flight_number": "KA 1196", "origin": "DAL", "destination": "DEN", "day_offset": 1, "departs": "13:25", "arrives": "15:00", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 0},
+  {"flight_number": "KA 1204", "origin": "DAL", "destination": "DEN", "day_offset": 1, "departs": "17:55", "arrives": "19:30", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 12},
+  {"flight_number": "KA 1655", "origin": "HOU", "destination": "AUS", "day_offset": 1, "departs": "06:30", "arrives": "07:25", "status": "CANCELLED", "cancellation_cause": "weather_atc", "seats_available": 0},
+  {"flight_number": "KA 1660", "origin": "HOU", "destination": "AUS", "day_offset": 1, "departs": "10:05", "arrives": "11:00", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 6},
+  {"flight_number": "KA 1668", "origin": "HOU", "destination": "AUS", "day_offset": 1, "departs": "12:10", "arrives": "13:05", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 9},
+  {"flight_number": "KA 2044", "origin": "PHX", "destination": "LAS", "day_offset": 1, "departs": "11:00", "arrives": "12:10", "status": "CANCELLED", "cancellation_cause": "crew_availability", "seats_available": 0},
+  {"flight_number": "KA 2050", "origin": "PHX", "destination": "LAS", "day_offset": 1, "departs": "15:30", "arrives": "16:40", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 0},
+  {"flight_number": "KA 2058", "origin": "PHX", "destination": "LAS", "day_offset": 1, "departs": "20:10", "arrives": "21:20", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 0},
+  {"flight_number": "KA 2062", "origin": "PHX", "destination": "LAS", "day_offset": 2, "departs": "07:00", "arrives": "08:10", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 15},
+  {"flight_number": "KA 1318", "origin": "AUS", "destination": "HOU", "day_offset": 1, "departs": "14:00", "arrives": "14:55", "status": "CANCELLED", "cancellation_cause": "crew_availability", "seats_available": 0},
+  {"flight_number": "KA 1322", "origin": "AUS", "destination": "HOU", "day_offset": 1, "departs": "14:50", "arrives": "15:45", "status": "SCHEDULED", "cancellation_cause": null, "seats_available": 5}
+]

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://langgra.ph/schema.json",
+  "source": {
+    "kind": "uv",
+    "root": ".",
+    "package": "kea"
+  },
+  "python_version": "3.13",
+  "graphs": {
+    "claims": {
+      "path": "./src/kea/claims/graph.py:graph",
+      "description": "Kea Air damaged-baggage claims: photo check, damage assessment, payout policy, human review, reply letter."
+    },
+    "rebooking": {
+      "path": "./src/kea/rebooking/agent.py:agent",
+      "description": "Kea Air rebooking assistant: a Deep Agent that helps a passenger whose flight was cancelled."
+    }
+  },
+  "env": ".env"
+}

@@ -1,0 +1,70 @@
+# One toolchain file: `mise trust && mise install && mise run setup`.
+# Python comes from uv (.python-version), not mise.
+
+[tools]
+uv = "0.12"
+lefthook = "2"
+"github:SocketDev/sfw-free" = { version = "1.15.2", bin = "sfw" }
+"github:langchain-ai/langsmith-cli" = { version = "v0.2.60", bin = "langsmith" }
+
+[tasks.setup]
+description = "Install dependencies through Socket Firewall, then git hooks"
+run = ["sfw uv sync --all-groups", "lefthook install"]
+
+[tasks.dev]
+description = "Agent Server on :2024 for LangSmith Studio (claims workflow + rebooking agent)"
+run = "uv run langgraph dev --no-browser"
+
+[tasks.lab]
+description = "JupyterLab on the notebooks"
+run = "uv run --with jupyterlab jupyter lab notebooks/"
+
+[tasks.check]
+description = "Format check, lint and type check"
+run = ["uv run ruff format --check .", "uv run ruff check .", "uv run ty check"]
+
+[tasks.fix]
+description = "Apply ruff formatting and safe lint fixes"
+run = ["uv run ruff format .", "uv run ruff check --fix ."]
+
+[tasks."binder:export"]
+description = "Regenerate .binder/requirements.txt from uv.lock"
+run = "uv export --no-hashes --no-emit-project --no-dev --python 3.13 --quiet -o .binder/requirements.txt"
+
+[tasks."eval:claims"]
+description = "Build the claims dataset and run the Part 1 experiments"
+run = "uv run python -m kea.evals.claims"
+
+[tasks."eval:rebooking"]
+description = "Build the rebooking dataset and run the Part 2 experiments"
+run = "uv run python -m kea.evals.rebooking"
+
+[tasks.deploy]
+description = "Deploy the rebooking agent to the workspace of .env's LANGSMITH_API_KEY"
+# The deployment type is fixed when it is first created; later runs update it by name.
+# Keep legacy `dev` (no scale-to-zero): `serverless` would cold-start on the first live request.
+run = "uv run langgraph deploy --name kea-rebooking --deployment-type dev"
+
+[tasks."eval:online"]
+description = "Create or update the online evaluators on the kea-rebooking deployment project"
+run = "uv run python -m kea.evals.online --deployment kea-rebooking"
+
+[tasks.seed]
+description = "Send seed conversations to a deployment: mise run seed -- --url <deployment-url>"
+run = "uv run python scripts/seed_traffic.py"
+
+[tasks.reset]
+description = "Clear local Studio threads and memory (stop `mise run dev` first)"
+run = "uv run python scripts/reset.py"
+
+[tasks."reset:langsmith"]
+description = "Also delete workshop experiments, added examples, the review queue and notebook projects; pass -- --yes to apply"
+run = "uv run python scripts/reset.py --langsmith"
+
+[tasks."reset:all"]
+description = "Local + LangSmith + the deployment's threads and memory; pass -- --yes to apply"
+run = "uv run python scripts/reset.py --langsmith --deployment"
+
+[tasks."agents:tag"]
+description = "Attach the workshop's LangSmith resources to their agents: mise run agents:tag -- --apply"
+run = "uv run python scripts/tag_agents.py"

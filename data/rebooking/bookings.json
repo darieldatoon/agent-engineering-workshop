@@ -1,0 +1,8 @@
+[
+  {"confirmation_code": "ABC123", "passenger": {"first_name": "Alex", "last_name": "Example", "email": "alex.example@example.com"}, "loyalty_tier": "Gold", "seat_pref": "window", "flight_number": "KA 1182"},
+  {"confirmation_code": "DEF456", "passenger": {"first_name": "Blair", "last_name": "Sample", "email": "blair.sample@example.com"}, "loyalty_tier": "Member", "seat_pref": "aisle", "flight_number": "KA 1182"},
+  {"confirmation_code": "GHI789", "passenger": {"first_name": "Casey", "last_name": "Demo", "email": "casey.demo@example.com"}, "loyalty_tier": "Platinum", "seat_pref": "aisle", "flight_number": "KA 1655"},
+  {"confirmation_code": "JKL012", "passenger": {"first_name": "Drew", "last_name": "Placeholder", "email": "drew.placeholder@example.com"}, "loyalty_tier": "Member", "seat_pref": "none", "flight_number": "KA 2044"},
+  {"confirmation_code": "MNO345", "passenger": {"first_name": "Emery", "last_name": "Test", "email": "emery.test@example.com"}, "loyalty_tier": "Silver", "seat_pref": "none", "flight_number": "KA 1318"},
+  {"confirmation_code": "PQR678", "passenger": {"first_name": "Finley", "last_name": "Fakename", "email": "finley.fakename@example.com"}, "loyalty_tier": "Gold", "seat_pref": "none", "flight_number": "KA 1182"}
+]
