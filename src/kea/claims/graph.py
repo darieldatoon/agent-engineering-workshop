@@ -19,6 +19,7 @@ from typing import Annotated, Any, Literal, TypedDict, cast
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
@@ -84,6 +85,11 @@ def _llm(runtime: Runtime[Context]):
     return init_chat_model((runtime.context or Context()).model)
 
 
+def _internal(runnable):
+    # Keeps these calls' JSON out of Studio's Chat view, which streams every model call.
+    return runnable.with_config(tags=[TAG_NOSTREAM])
+
+
 def _photo_messages(system: str, data_url: str) -> list[SystemMessage | HumanMessage]:
     image = {"type": "image_url", "image_url": {"url": data_url}}
     return [SystemMessage(system), HumanMessage([image])]
@@ -95,7 +101,7 @@ def intake(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
         return {}
     message = state["messages"][-1]
     photo = photo_from_content(message.content)
-    reader = _llm(runtime).with_structured_output(ClaimForm)
+    reader = _internal(_llm(runtime).with_structured_output(ClaimForm))
     form = cast(
         ClaimForm,
         reader.invoke(
@@ -115,7 +121,7 @@ def validate_photo(
 ) -> dict[str, Any]:
     data_url = resolve_photo(state["photo"])
     attach_image_to_root_run(config, data_url)
-    check = _llm(runtime).with_structured_output(PhotoCheck)
+    check = _internal(_llm(runtime).with_structured_output(PhotoCheck))
     result = cast(PhotoCheck, check.invoke(_photo_messages(prompts.PHOTO_CHECK, data_url)))
     return {"photo_check": result.model_dump()}
 
@@ -141,7 +147,7 @@ def reject_letter(state: ClaimState) -> dict[str, Any]:
 
 
 def assess_damage(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
-    assess = _llm(runtime).with_structured_output(DamageAssessment)
+    assess = _internal(_llm(runtime).with_structured_output(DamageAssessment))
     messages = _photo_messages(prompts.ASSESS_DAMAGE, resolve_photo(state["photo"]))
     return {"assessment": cast(DamageAssessment, assess.invoke(messages)).model_dump()}
 
@@ -189,8 +195,8 @@ def draft_letter(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]
     )
     letter = _llm(runtime).invoke([SystemMessage(prompts.DRAFT_LETTER), HumanMessage(facts)])
     status: Status = "paid" if state["payout_usd"] > 0 else "unpaid"
-    text = str(letter.text)
-    return {"letter": text, "status": status, "messages": [AIMessage(text)]}
+    # The model's own message, so the reply Studio streamed and the saved one are the same.
+    return {"letter": str(letter.text), "status": status, "messages": [letter]}
 
 
 def record_claim(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
