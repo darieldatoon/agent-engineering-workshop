@@ -22,5 +22,8 @@ notebooks/.langgraph_api/
 
 # OS / editor
 .DS_Store
-.vscode/
+# Shared workspace settings pick the .venv kernel; everything else stays local.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
