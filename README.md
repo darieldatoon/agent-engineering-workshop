@@ -16,7 +16,7 @@ Start with [`notebooks/00_setup.ipynb`](notebooks/00_setup.ipynb): it covers Lan
 
 ```sh
 mise trust && mise install && mise run setup
-cp .env.example .env   # add LANGSMITH_API_KEY
+cp .env.example .env   # add LANGSMITH_API_KEY (and LANGSMITH_GATEWAY_API_KEY if you have one)
 mise run dev           # Agent Server for Studio on :2024
 ```
 
