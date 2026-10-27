@@ -1,4 +1,3 @@
 #!/bin/sh
 set -eu
 pip install --no-deps -e .
-python -m ipykernel install --user --name kea --display-name 'Kea workshop (.venv)'

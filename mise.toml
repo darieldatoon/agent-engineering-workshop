@@ -12,8 +12,9 @@ description = "Install dependencies through Socket Firewall, then git hooks"
 run = [
   "sfw uv sync --all-groups",
   "lefthook install",
-  # Every notebook asks for the `kea` kernel, so VS Code and JupyterLab pick .venv without prompting.
-  "uv run python -m ipykernel install --user --name kea --display-name 'Kea workshop (.venv)'",
+  # Git strips outputs and kernel metadata from what you commit; your open notebooks keep theirs.
+  "uv run nbstripout --install --attributes .gitattributes",
+  "git config filter.nbstripout.extrakeys 'metadata.kernelspec metadata.language_info.version'",
 ]
 
 [tasks.dev]
