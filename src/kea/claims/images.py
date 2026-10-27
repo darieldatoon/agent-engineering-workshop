@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 from pathlib import Path
+from typing import Any
 
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tracers.langchain import LangChainTracer
@@ -38,6 +39,33 @@ def resolve_photo(photo: str) -> str:
     if photo.startswith("data:"):
         return photo
     return image_to_data_url(PHOTO_DIR / Path(photo).name)
+
+
+def photo_from_content(content: str | list[Any]) -> str | None:
+    """The first image in a chat message's content, as a data URL. Studio's upload sends one."""
+    if isinstance(content, str):
+        return None
+    for block in content:
+        if not isinstance(block, dict):
+            continue
+        if block.get("type") == "image_url":
+            url = block["image_url"]
+            return url["url"] if isinstance(url, dict) else url
+        if block.get("type") == "image":
+            data = block.get("data") or block.get("base64")
+            if data:
+                return f"data:{block.get('mime_type', 'image/jpeg')};base64,{data}"
+            if url := block.get("url"):
+                return url
+    return None
+
+
+def text_from_content(content: str | list[Any]) -> str:
+    if isinstance(content, str):
+        return content
+    return " ".join(
+        b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"
+    )
 
 
 def attach_image_to_root_run(config: RunnableConfig, data_url: str) -> None:

@@ -1,5 +1,9 @@
 """Prompts for the three LLM steps."""
 
+CLAIM_FORM = """\
+Read a passenger's baggage claim message and pull out the claim details.
+Copy IDs and flight numbers as written. Only fill the bag's value if the passenger states one."""
+
 PHOTO_CHECK = """\
 You screen photos submitted with airline baggage claims.
 Decide whether the photo shows a suitcase, bag, or other piece of luggage.

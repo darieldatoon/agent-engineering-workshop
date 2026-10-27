@@ -1,8 +1,11 @@
 """Kea Air damaged-baggage claims: a workflow, not an agent.
 
-    START -> validate_photo -> assess_damage -> check_history -> apply_policy
+    START -> intake -> validate_photo -> assess_damage -> check_history -> apply_policy
           -> [human_review] -> draft_letter -> record_claim -> END
-    (a photo that is not luggage goes validate_photo -> reject_letter -> END)
+    (no photo, or a photo that is not luggage, goes to reject_letter -> END)
+
+Send either the claim fields directly (`photo`, `passenger_id`, ...) or a chat message with the
+photo attached, which is what Studio's Chat view sends; `intake` turns the message into fields.
 
 The LLM sits inside predefined steps; the code decides which step runs next.
 `langgraph dev` serves `graph` and supplies the checkpointer and store.
@@ -11,18 +14,25 @@ The LLM sits inside predefined steps; the code decides which step runs next.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, TypedDict, cast
+from typing import Annotated, Any, Literal, TypedDict, cast
 
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START, StateGraph
+from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
 from langgraph.types import RetryPolicy, interrupt
 
 from kea.claims import prompts
-from kea.claims.images import attach_image_to_root_run, resolve_photo
+from kea.claims.images import (
+    attach_image_to_root_run,
+    photo_from_content,
+    resolve_photo,
+    text_from_content,
+)
 from kea.claims.models import (
+    ClaimForm,
     ClaimRecord,
     DamageAssessment,
     PhotoCheck,
@@ -42,14 +52,20 @@ class Context:
     model: str = MODEL
 
 
-class ClaimInput(TypedDict):
+# Used when a chat message doesn't state the bag's value.
+DEFAULT_DECLARED_VALUE_USD = 500.0
+
+
+class ClaimInput(TypedDict, total=False):
     photo: str  # a data URL, or a file name under data/bag-photos
     passenger_id: str
     flight_number: str
     declared_value_usd: float
+    messages: Annotated[list[AnyMessage], add_messages]  # the chat route: a photo plus one line
 
 
 class ClaimOutput(TypedDict, total=False):
+    messages: Annotated[list[AnyMessage], add_messages]
     status: Status
     photo_check: dict[str, Any]
     assessment: dict[str, Any]
@@ -73,6 +89,27 @@ def _photo_messages(system: str, data_url: str) -> list[SystemMessage | HumanMes
     return [SystemMessage(system), HumanMessage([image])]
 
 
+def intake(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
+    """Turn a chat message (photo + one line of text) into claim fields; a direct claim skips this."""
+    if state.get("photo") or not state.get("messages"):
+        return {}
+    message = state["messages"][-1]
+    photo = photo_from_content(message.content)
+    reader = _llm(runtime).with_structured_output(ClaimForm)
+    form = cast(
+        ClaimForm,
+        reader.invoke(
+            [SystemMessage(prompts.CLAIM_FORM), HumanMessage(text_from_content(message.content))]
+        ),
+    )
+    fields: dict[str, Any] = {
+        "passenger_id": form.passenger_id,
+        "flight_number": form.flight_number,
+        "declared_value_usd": form.declared_value_usd or DEFAULT_DECLARED_VALUE_USD,
+    }
+    return {**fields, "photo": photo} if photo else fields
+
+
 def validate_photo(
     state: ClaimState, runtime: Runtime[Context], config: RunnableConfig
 ) -> dict[str, Any]:
@@ -84,16 +121,23 @@ def validate_photo(
 
 
 def reject_letter(state: ClaimState) -> dict[str, Any]:
-    reason = state["photo_check"]["reason"]
+    if check := state.get("photo_check"):
+        problem = f"the photo does not appear to show luggage ({check['reason']})"
+    else:
+        problem = "no photo was attached"
     letter = (
         "Dear passenger,\n\n"
         "We're sorry to hear your bag had a problem, and thank you for contacting Kea Air "
-        "Baggage Claims. We could not process this claim because the photo does not appear to "
-        f"show luggage ({reason}), so no payout has been issued. "
-        "To submit a new claim, please send a clear photo of the damaged bag.\n\n"
+        f"Baggage Claims. We could not process this claim because {problem}, so no payout has "
+        "been issued. To submit a new claim, please send a clear photo of the damaged bag.\n\n"
         "Kea Air Baggage Claims"
     )
-    return {"letter": letter, "status": "rejected", "payout_usd": 0.0}
+    return {
+        "letter": letter,
+        "status": "rejected",
+        "payout_usd": 0.0,
+        "messages": [AIMessage(letter)],
+    }
 
 
 def assess_damage(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
@@ -145,7 +189,8 @@ def draft_letter(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]
     )
     letter = _llm(runtime).invoke([SystemMessage(prompts.DRAFT_LETTER), HumanMessage(facts)])
     status: Status = "paid" if state["payout_usd"] > 0 else "unpaid"
-    return {"letter": str(letter.text), "status": status}
+    text = str(letter.text)
+    return {"letter": text, "status": status, "messages": [AIMessage(text)]}
 
 
 def record_claim(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]:
@@ -161,6 +206,10 @@ def record_claim(state: ClaimState, runtime: Runtime[Context]) -> dict[str, Any]
         ("claims", state["passenger_id"]), state["flight_number"], record.model_dump()
     )
     return {}
+
+
+def route_after_intake(state: ClaimState) -> Literal["validate_photo", "reject_letter"]:
+    return "validate_photo" if state.get("photo") else "reject_letter"
 
 
 def route_after_photo_check(state: ClaimState) -> Literal["assess_damage", "reject_letter"]:
@@ -180,6 +229,7 @@ builder = StateGraph(
     input_schema=ClaimInput,  # ty: ignore[invalid-argument-type]
     output_schema=ClaimOutput,  # ty: ignore[invalid-argument-type]
 )
+builder.add_node("intake", intake, retry_policy=retry)
 builder.add_node("validate_photo", validate_photo, retry_policy=retry)  # ty: ignore[invalid-argument-type]
 builder.add_node("reject_letter", reject_letter)
 builder.add_node("assess_damage", assess_damage, retry_policy=retry)
@@ -189,7 +239,8 @@ builder.add_node("human_review", human_review)
 builder.add_node("draft_letter", draft_letter, retry_policy=retry)
 builder.add_node("record_claim", record_claim)
 
-builder.add_edge(START, "validate_photo")
+builder.add_edge(START, "intake")
+builder.add_conditional_edges("intake", route_after_intake)
 builder.add_conditional_edges("validate_photo", route_after_photo_check)
 builder.add_edge("reject_letter", END)
 builder.add_edge("assess_damage", "check_history")

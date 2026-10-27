@@ -23,6 +23,18 @@ def _unit_interval(value: float) -> float:
 Confidence = Annotated[float, AfterValidator(_unit_interval)]
 
 
+class ClaimForm(BaseModel):
+    """The claim details a passenger types next to their photo in chat."""
+
+    passenger_id: str = Field(
+        description="The passenger or loyalty ID, e.g. P-1001; 'guest' if not given."
+    )
+    flight_number: str = Field(description="The flight, e.g. KA 1182; 'unknown' if not given.")
+    declared_value_usd: float | None = Field(
+        default=None, description="The bag's value in US dollars, if the passenger states one."
+    )
+
+
 class PhotoCheck(BaseModel):
     """Is this a photo of a piece of luggage at all?"""
 
